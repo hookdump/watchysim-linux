@@ -21,25 +21,53 @@
 #endif
 #include "GraphicsAdapter.h"
 
-// Watch faces
+// Watch faces - conditional includes based on build configuration
+#ifdef USE_7SEG
 #include "WatchFaces/7_SEG/Watchy_7_SEG.h"
-//#include "WatchFaces/AnalogGabel/Watchy_AnalogGabel.h"
-//#include "WatchFaces/DOS/Watchy_DOS.h"
-//#include "WatchFaces/MacPaint/Watchy_MacPaint.h"
-//#include "WatchFaces/Mario/Watchy_Mario.h"
-//#include "WatchFaces/Pokemon/Watchy_Pokemon.h"
-//#include "WatchFaces/PowerShell/Watchy_PowerShell.h"
-//#include "WatchFaces/Tetris/Watchy_Tetris.h"
+#elif defined(USE_AnalogGabel)
+#include "WatchFaces/AnalogGabel/Watchy_AnalogGabel.h"
+#elif defined(USE_DOS)
+#include "WatchFaces/DOS/Watchy_DOS.h"
+#elif defined(USE_MacPaint)
+#include "WatchFaces/MacPaint/Watchy_MacPaint.h"
+#elif defined(USE_Mario)
+#include "WatchFaces/Mario/Watchy_Mario.h"
+#elif defined(USE_Pokemon)
+#include "WatchFaces/Pokemon/Watchy_Pokemon.h"
+#elif defined(USE_PowerShell)
+#include "WatchFaces/PowerShell/Watchy_PowerShell.h"
+#elif defined(USE_Tetris)
+#include "WatchFaces/Tetris/Watchy_Tetris.h"
+#elif defined(USE_BASIC)
+// Basic uses the base Watchy class
+#else
+// Default to 7-segment if nothing is defined
+#include "WatchFaces/7_SEG/Watchy_7_SEG.h"
+#endif
 
-// Initialize the watch face
+// Initialize the watch face based on build configuration
+#ifdef USE_7SEG
 Watchy7SEG watchy = Watchy7SEG();
-//WatchyAnalogGabel watchy = WatchyAnalogGabel();
-//WatchyDOS watchy = WatchyDOS();
-//WatchyMacPaint watchy = WatchyMacPaint();
-//WatchyMario watchy = WatchyMario();
-//WatchyPowerShell watchy = WatchyPowerShell();
-//WatchyPokemon watchy = WatchyPokemon();
-//WatchyTetris watchy = WatchyTetris();
+#elif defined(USE_AnalogGabel)
+WatchyAnalogGabel watchy = WatchyAnalogGabel();
+#elif defined(USE_DOS)
+WatchyDOS watchy = WatchyDOS();
+#elif defined(USE_MacPaint)
+WatchyMacPaint watchy = WatchyMacPaint();
+#elif defined(USE_Mario)
+WatchyMario watchy = WatchyMario();
+#elif defined(USE_Pokemon)
+WatchyPokemon watchy = WatchyPokemon();
+#elif defined(USE_PowerShell)
+WatchyPowerShell watchy = WatchyPowerShell();
+#elif defined(USE_Tetris)
+WatchyTetris watchy = WatchyTetris();
+#elif defined(USE_BASIC)
+Watchy watchy = Watchy();
+#else
+// Default to 7-segment if nothing is defined
+Watchy7SEG watchy = Watchy7SEG();
+#endif
 
 // SDL2 display class
 class WatchySimSDL2 {

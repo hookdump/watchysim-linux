@@ -31,11 +31,13 @@ include_directories(
 # Define macros
 add_definitions(-DLINUX_BUILD)
 add_definitions(-DSDL2_BACKEND)
+add_definitions(-DWATCHY_SIM)
 
 # Core source files
 set(CORE_SOURCES
     WatchySim/WatchySim_SDL2.cpp
     WatchySim/Watchy_SDL2.cpp
+    WatchySim/GraphicsAdapter_SDL2.cpp
     WatchySim/arduino/Common.cpp
     WatchySim/arduino/String.cpp
     WatchySim/arduino/dtostrf.cpp
@@ -64,6 +66,12 @@ function(add_watch_face NAME SOURCES)
     target_compile_definitions(WatchySim_${NAME} PRIVATE USE_${NAME})
     target_link_libraries(WatchySim_${NAME} ${SDL2_LIBRARIES})
     target_compile_options(WatchySim_${NAME} PRIVATE ${SDL2_CFLAGS_OTHER})
+    
+    # Add include directories to handle relative includes properly
+    target_include_directories(WatchySim_${NAME} PRIVATE
+        ${CMAKE_SOURCE_DIR}/WatchySim
+        ${CMAKE_SOURCE_DIR}/WatchySim/WatchFaces/${NAME}
+    )
     
     # Add compiler warnings
     target_compile_options(WatchySim_${NAME} PRIVATE 
@@ -168,9 +176,51 @@ if(BUILD_BASIC)
 endif()
 
 # Installation rules
-install(TARGETS WatchySim_7SEG
-    RUNTIME DESTINATION bin
-)
+if(BUILD_7SEG)
+    install(TARGETS WatchySim_7SEG
+        RUNTIME DESTINATION bin
+    )
+endif()
+if(BUILD_ANALOG_GABEL)
+    install(TARGETS WatchySim_AnalogGabel
+        RUNTIME DESTINATION bin
+    )
+endif()
+if(BUILD_DOS)
+    install(TARGETS WatchySim_DOS
+        RUNTIME DESTINATION bin
+    )
+endif()
+if(BUILD_MACPAINT)
+    install(TARGETS WatchySim_MacPaint
+        RUNTIME DESTINATION bin
+    )
+endif()
+if(BUILD_MARIO)
+    install(TARGETS WatchySim_Mario
+        RUNTIME DESTINATION bin
+    )
+endif()
+if(BUILD_POKEMON)
+    install(TARGETS WatchySim_Pokemon
+        RUNTIME DESTINATION bin
+    )
+endif()
+if(BUILD_POWERSHELL)
+    install(TARGETS WatchySim_PowerShell
+        RUNTIME DESTINATION bin
+    )
+endif()
+if(BUILD_TETRIS)
+    install(TARGETS WatchySim_Tetris
+        RUNTIME DESTINATION bin
+    )
+endif()
+if(BUILD_BASIC)
+    install(TARGETS WatchySim_Basic
+        RUNTIME DESTINATION bin
+    )
+endif()
 
 # Print configuration summary
 message(STATUS "")
