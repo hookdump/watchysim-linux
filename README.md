@@ -18,6 +18,8 @@ WatchySim builds under Visual Studio [Community Edition](https://visualstudio.mi
 
 WatchySim now supports Linux through SDL2. The Linux port provides the same simulation capabilities with an interactive Dear ImGui menu for controlling various watch parameters.
 
+<img width="1019" height="717" alt="image" src="https://github.com/user-attachments/assets/fd6024d3-ca62-47af-85cf-1ca9a0a27084" />
+
 #### Linux Build Requirements
 
 - CMake 3.10 or higher
