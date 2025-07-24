@@ -159,6 +159,7 @@ public:
     void resetTime();
     void showWatchFace(GraphicsContext* context);
     virtual void drawWatchFace();
+    virtual void handleButtonPress(uint8_t buttonID);
     
     float getBatteryVoltage();
     void setBatteryVoltage(float voltage);

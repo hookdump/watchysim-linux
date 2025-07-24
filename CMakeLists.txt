@@ -26,6 +26,8 @@ include_directories(
     ${SDL2_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/WatchySim
     ${CMAKE_SOURCE_DIR}/WatchySim/arduino
+    ${CMAKE_SOURCE_DIR}/external/imgui
+    ${CMAKE_SOURCE_DIR}/external/imgui/backends
 )
 
 # Define macros
@@ -41,6 +43,13 @@ set(CORE_SOURCES
     WatchySim/arduino/Common.cpp
     WatchySim/arduino/String.cpp
     WatchySim/arduino/dtostrf.cpp
+    external/imgui/imgui.cpp
+    external/imgui/imgui_demo.cpp
+    external/imgui/imgui_draw.cpp
+    external/imgui/imgui_tables.cpp
+    external/imgui/imgui_widgets.cpp
+    external/imgui/backends/imgui_impl_sdl2.cpp
+    external/imgui/backends/imgui_impl_sdlrenderer2.cpp
 )
 
 # Core headers

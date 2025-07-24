@@ -13,6 +13,11 @@
 #include <ctime>
 #include <iostream>
 
+// Dear ImGui includes
+#include "imgui.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_sdlrenderer2.h"
+
 // Include Watchy headers
 #ifndef _WIN32
 #include "Watchy_SDL2.h"
@@ -89,6 +94,9 @@ private:
     // Timer ID
     SDL_TimerID updateTimer;
     
+    // Menu state
+    bool showMenu = true;
+    
 public:
     WatchySimSDL2() : window(nullptr), renderer(nullptr), displayTexture(nullptr), 
                       backgroundTexture(nullptr), displayPixels(nullptr), updateTimer(0) {}
@@ -144,6 +152,17 @@ public:
         // Set up timer for updates (1 second interval)
         updateTimer = SDL_AddTimer(1000, timerCallback, this);
         
+        // Initialize Dear ImGui
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        
+        // Setup Dear ImGui style
+        ImGui::StyleColorsDark();
+        
+        // Setup Platform/Renderer backends
+        ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
+        ImGui_ImplSDLRenderer2_Init(renderer);
         
         return true;
     }
@@ -239,15 +258,13 @@ public:
         struct tm watchy_tm = *tm_local;
         watchy.setTime(watchy_tm);
         
-        // Only update display every minute (when seconds == 0)
-        if (tm_local->tm_sec == 0) {
-            // Push a user event to trigger display update
-            SDL_Event event;
-            SDL_memset(&event, 0, sizeof(event));
-            event.type = SDL_USEREVENT;
-            event.user.code = 1; // 1 = timer update
-            SDL_PushEvent(&event);
-        }
+        // Always update display every second
+        // This allows seconds display mode to work properly
+        SDL_Event event;
+        SDL_memset(&event, 0, sizeof(event));
+        event.type = SDL_USEREVENT;
+        event.user.code = 1; // 1 = timer update
+        SDL_PushEvent(&event);
         
         return interval; // Continue timer
     }
@@ -265,24 +282,60 @@ public:
         
         while (running) {
             while (SDL_PollEvent(&event)) {
+                // Process ImGui events
+                ImGui_ImplSDL2_ProcessEvent(&event);
+                
                 switch (event.type) {
                     case SDL_QUIT:
                         running = false;
                         break;
                         
                     case SDL_KEYDOWN:
-                        handleKeyPress(event.key.keysym.sym);
+                        // Don't process key events if ImGui wants keyboard input
+                        if (!ImGui::GetIO().WantCaptureKeyboard) {
+                            handleKeyPress(event.key.keysym.sym);
+                        }
                         break;
                         
                     case SDL_USEREVENT:
                         if (event.user.code == 1) {
                             // Timer update - repaint display
                             onPaint();
-                            updateDisplay();
+                            // Don't call updateDisplay here, we'll do it after ImGui
                         }
                         break;
                 }
             }
+            
+            // Start ImGui frame
+            ImGui_ImplSDLRenderer2_NewFrame();
+            ImGui_ImplSDL2_NewFrame();
+            ImGui::NewFrame();
+            
+            // Render menu if visible
+            if (showMenu) {
+                renderMenu();
+            }
+            
+            // Rendering
+            ImGui::Render();
+            
+            // Clear and draw background
+            drawBackground();
+            
+            // Draw the watch display
+            SDL_Rect dstRect;
+            dstRect.x = (WINDOW_WIDTH - DISPLAY_WIDTH * SCALE) / 2;
+            dstRect.y = (WINDOW_HEIGHT - DISPLAY_HEIGHT * SCALE) / 2;
+            dstRect.w = DISPLAY_WIDTH * SCALE;
+            dstRect.h = DISPLAY_HEIGHT * SCALE;
+            SDL_RenderCopy(renderer, displayTexture, NULL, &dstRect);
+            
+            // Render ImGui on top
+            ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+            
+            // Present
+            SDL_RenderPresent(renderer);
             
             // Small delay to prevent CPU spinning
             SDL_Delay(10);
@@ -339,7 +392,11 @@ public:
             case SDLK_r:
                 // Refresh display
                 onPaint();
-                updateDisplay();
+                break;
+                
+            case SDLK_m:
+                // Toggle menu
+                showMenu = !showMenu;
                 break;
                 
             case SDLK_t:
@@ -351,33 +408,291 @@ public:
             // Button simulations
             case SDLK_1:
             case SDLK_q:
-                std::cout << "Button 1 (Menu/Back) pressed" << std::endl;
-                // TODO: Call watchy button handler when implemented
+                watchy.handleButtonPress(1);
+                onPaint();
+                updateDisplay();
                 break;
                 
             case SDLK_2:
             case SDLK_w:
-                std::cout << "Button 2 (Up) pressed" << std::endl;
-                // TODO: Call watchy button handler when implemented
+                watchy.handleButtonPress(2);
+                onPaint();
+                updateDisplay();
                 break;
                 
             case SDLK_3:
             case SDLK_e:
-                std::cout << "Button 3 (Down) pressed" << std::endl;
-                // TODO: Call watchy button handler when implemented
+                watchy.handleButtonPress(3);
+                onPaint();
+                updateDisplay();
                 break;
                 
             case SDLK_4:
-                std::cout << "Button 4 (Select) pressed" << std::endl;
-                // TODO: Call watchy button handler when implemented
+                watchy.handleButtonPress(4);
+                onPaint();
+                updateDisplay();
                 break;
         }
+    }
+    
+    void renderMenu() {
+        // Create a dockable menu window
+        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(300, 600), ImGuiCond_FirstUseEver);
+        
+        if (ImGui::Begin("WatchySim Control Panel", &showMenu)) {
+            // Time Menu
+            if (ImGui::CollapsingHeader("Time")) {
+                if (ImGui::Button("Current Time")) {
+                    time_t curr_time = time(NULL);
+                    struct tm* tm_local = localtime(&curr_time);
+                    watchy.setTime(*tm_local);
+                    onPaint();
+                }
+                if (ImGui::Button("Short (01:01:01 May 1, 2011)")) {
+                    struct tm custom_time = {0};
+                    custom_time.tm_year = 111; // 2011-1900
+                    custom_time.tm_mon = 4;     // May (0-based)
+                    custom_time.tm_mday = 1;
+                    custom_time.tm_hour = 1;
+                    custom_time.tm_min = 1;
+                    custom_time.tm_sec = 1;
+                    watchy.setTime(custom_time);
+                    onPaint();
+                }
+                if (ImGui::Button("Long (18:33:01 Sep 31, 2099)")) {
+                    struct tm custom_time = {0};
+                    custom_time.tm_year = 199; // 2099-1900
+                    custom_time.tm_mon = 8;     // September (0-based)
+                    custom_time.tm_mday = 31;
+                    custom_time.tm_hour = 18;
+                    custom_time.tm_min = 33;
+                    custom_time.tm_sec = 1;
+                    watchy.setTime(custom_time);
+                    onPaint();
+                }
+            }
+            
+            // Battery Menu
+            if (ImGui::CollapsingHeader("Battery")) {
+                float voltage = watchy.getBatteryVoltage();
+                ImGui::Text("Current: %.2fV", voltage);
+                
+                if (ImGui::Button("Dead (0.0V)")) {
+                    watchy.setBatteryVoltage(0.0f);
+                    onPaint();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Low (3.7V)")) {
+                    watchy.setBatteryVoltage(3.7f);
+                    onPaint();
+                }
+                if (ImGui::Button("Medium (3.81V)")) {
+                    watchy.setBatteryVoltage(3.81f);
+                    onPaint();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("High (3.96V)")) {
+                    watchy.setBatteryVoltage(3.96f);
+                    onPaint();
+                }
+                if (ImGui::Button("Max (4.2V)")) {
+                    watchy.setBatteryVoltage(4.2f);
+                    onPaint();
+                }
+            }
+            
+            // Bluetooth Menu
+            if (ImGui::CollapsingHeader("Bluetooth")) {
+                static bool btEnabled = false;
+                ImGui::Text("Status: %s", btEnabled ? "Enabled" : "Disabled");
+                
+                if (ImGui::Button("Toggle Bluetooth")) {
+                    btEnabled = !btEnabled;
+                    watchy.setBluetooth(btEnabled);
+                    onPaint();
+                }
+            }
+            
+            // WiFi Menu
+            if (ImGui::CollapsingHeader("WiFi")) {
+                static bool wifiEnabled = false;
+                ImGui::Text("Status: %s", wifiEnabled ? "On" : "Off");
+                
+                if (ImGui::Button("Toggle WiFi")) {
+                    wifiEnabled = !wifiEnabled;
+                    watchy.setWifi(wifiEnabled);
+                    onPaint();
+                }
+            }
+            
+            // Steps Menu
+            if (ImGui::CollapsingHeader("Steps")) {
+                static int currentSteps = 0;
+                ImGui::Text("Current: %d steps", currentSteps);
+                
+                if (ImGui::Button("None (0)")) {
+                    currentSteps = 0;
+                    watchy.setSteps(0);
+                    onPaint();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Lazy (12)")) {
+                    currentSteps = 12;
+                    watchy.setSteps(12);
+                    onPaint();
+                }
+                if (ImGui::Button("Regular (5,280)")) {
+                    currentSteps = 5280;
+                    watchy.setSteps(5280);
+                    onPaint();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Athlete (52,769)")) {
+                    currentSteps = 52769;
+                    watchy.setSteps(52769);
+                    onPaint();
+                }
+                
+                // Custom step input
+                static int customSteps = 0;
+                ImGui::InputInt("Custom Steps", &customSteps);
+                if (ImGui::Button("Set Custom")) {
+                    currentSteps = customSteps;
+                    watchy.setSteps(customSteps);
+                    onPaint();
+                }
+            }
+            
+            // Weather Menu
+            if (ImGui::CollapsingHeader("Weather")) {
+                weatherData weather = watchy.getWeatherData();
+                ImGui::Text("Current Code: %d", weather.weatherConditionCode);
+                
+                if (ImGui::Button("Clear (800)")) {
+                    watchy.setWeatherCode(800);
+                    onPaint();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Few Clouds (801)")) {
+                    watchy.setWeatherCode(801);
+                    onPaint();
+                }
+                if (ImGui::Button("Cloudy (802)")) {
+                    watchy.setWeatherCode(802);
+                    onPaint();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Atmosphere (750)")) {
+                    watchy.setWeatherCode(750);
+                    onPaint();
+                }
+                if (ImGui::Button("Snow (650)")) {
+                    watchy.setWeatherCode(650);
+                    onPaint();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Rain (550)")) {
+                    watchy.setWeatherCode(550);
+                    onPaint();
+                }
+                if (ImGui::Button("Drizzle (350)")) {
+                    watchy.setWeatherCode(350);
+                    onPaint();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Thunderstorm (250)")) {
+                    watchy.setWeatherCode(250);
+                    onPaint();
+                }
+            }
+            
+            // Temperature Menu
+            if (ImGui::CollapsingHeader("Temperature")) {
+                weatherData weather = watchy.getWeatherData();
+                int8_t temp = watchy.getTemperature();
+                ImGui::Text("Current: %d%s", temp, weather.isMetric ? "°C" : "°F");
+                
+                if (ImGui::Button("Celsius")) {
+                    watchy.setTemperatureUnitMetric(true);
+                    onPaint();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Fahrenheit")) {
+                    watchy.setTemperatureUnitMetric(false);
+                    onPaint();
+                }
+                
+                ImGui::Separator();
+                
+                if (ImGui::Button("Canada (-45°)")) {
+                    watchy.setTemperature(-45);
+                    onPaint();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Chilly (7°)")) {
+                    watchy.setTemperature(7);
+                    onPaint();
+                }
+                if (ImGui::Button("Warm (15°)")) {
+                    watchy.setTemperature(15);
+                    onPaint();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Inferno (40°)")) {
+                    watchy.setTemperature(40);
+                    onPaint();
+                }
+                
+                // Custom temperature input
+                static int customTemp = 20;
+                ImGui::InputInt("Custom Temp", &customTemp);
+                if (ImGui::Button("Set Custom")) {
+                    watchy.setTemperature((int8_t)customTemp);
+                    onPaint();
+                }
+            }
+            
+            // Tools Menu
+            if (ImGui::CollapsingHeader("Tools")) {
+                if (ImGui::Button("Screenshot")) {
+                    // TODO: Implement screenshot functionality
+                    ImGui::Text("Screenshot saved (TODO)");
+                }
+                
+                ImGui::Separator();
+                
+                if (ImGui::Button("Refresh Display")) {
+                    onPaint();
+                }
+                
+                if (ImGui::Button("Test Pattern")) {
+                    drawTestPattern();
+                }
+            }
+            
+            // About
+            if (ImGui::CollapsingHeader("About")) {
+                ImGui::Text("WatchySim Linux Port");
+                ImGui::Text("Using Dear ImGui for menus");
+                ImGui::Separator();
+                ImGui::Text("Press 'M' to toggle this menu");
+                ImGui::Text("Press 'ESC' to exit");
+            }
+        }
+        ImGui::End();
     }
     
     ~WatchySimSDL2() {
         if (updateTimer) {
             SDL_RemoveTimer(updateTimer);
         }
+        
+        // Cleanup ImGui
+        ImGui_ImplSDLRenderer2_Shutdown();
+        ImGui_ImplSDL2_Shutdown();
+        ImGui::DestroyContext();
+        
         if (displayPixels) delete[] displayPixels;
         if (displayTexture) SDL_DestroyTexture(displayTexture);
         if (backgroundTexture) SDL_DestroyTexture(backgroundTexture);
@@ -407,19 +722,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    std::cout << "WatchySim SDL2 - Linux Port" << std::endl;
-    std::cout << "Keys:" << std::endl;
-    std::cout << "  ESC - Exit" << std::endl;
-    std::cout << "  R   - Refresh display" << std::endl;
-    std::cout << "  T   - Test pattern" << std::endl;
-    std::cout << std::endl;
-    std::cout << "Button Simulation:" << std::endl;
-    std::cout << "  1 or Q - Button 1 (Menu/Back)" << std::endl;
-    std::cout << "  2 or W - Button 2 (Up)" << std::endl;
-    std::cout << "  3 or E - Button 3 (Down)" << std::endl;
-    std::cout << "  4 or R - Button 4 (Select)" << std::endl;
-    std::cout << std::endl;
-    std::cout << "  (Full menu functionality coming soon with Dear ImGui)" << std::endl;
     
     
     sim.run();

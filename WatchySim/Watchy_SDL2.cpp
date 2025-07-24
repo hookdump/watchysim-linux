@@ -8,8 +8,8 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
-#include "Watchy_SDL2.h"
 #include <iostream>
+#include "Watchy_SDL2.h"
 
 #ifndef _MAX_INT_DIG
 #define _MAX_INT_DIG    32
@@ -46,6 +46,12 @@ void Watchy::init() {}
 void Watchy::showWatchFace(GraphicsContext* context) {
     display.setContext(context);
     drawWatchFace();
+    context->present();
+}
+
+void Watchy::handleButtonPress(uint8_t buttonID) {
+    // Default implementation - does nothing
+    // Watch faces can override this to handle button presses
 }
 
 float Watchy::getBatteryVoltage() {
@@ -53,6 +59,7 @@ float Watchy::getBatteryVoltage() {
 }
 
 void Watchy::setBatteryVoltage(float voltage) {
+    float oldVoltage = currentVoltage;
     currentVoltage = voltage;
 }
 
@@ -65,6 +72,7 @@ void Watchy::setWifi(bool enabled) {
 }
 
 void Watchy::setSteps(uint32_t stepCount) {
+    uint32_t oldSteps = sensor.getCounter();
     sensor.setSteps(stepCount);
 }
 

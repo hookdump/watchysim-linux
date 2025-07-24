@@ -8,6 +8,7 @@
 #include <SDL2/SDL.h>
 #include <cstring>
 #include <algorithm>
+#include <iostream>
 
 void SDL2GraphicsContext::setPixel(int x, int y, uint32_t color) {
     if (x >= 0 && x < width && y >= 0 && y < height) {
@@ -69,7 +70,11 @@ void SDL2GraphicsContext::measureText(const char* text, int* width, int* height)
 
 void SDL2GraphicsContext::present() {
     // Update the texture with the pixel data
-    SDL_UpdateTexture(texture, NULL, pixels, width * sizeof(uint32_t));
+    int result = SDL_UpdateTexture(texture, NULL, pixels, width * sizeof(uint32_t));
+    if (result != 0) {
+        std::cerr << "[SDL2 ERROR] SDL_UpdateTexture failed: " << SDL_GetError() << std::endl;
+    } else {
+    }
     
     // Note: The actual rendering to screen should be done by the main loop
     // This just updates the texture with the current pixel data
