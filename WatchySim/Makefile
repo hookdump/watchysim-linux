@@ -10,8 +10,7 @@ OBJS = WatchySim_SDL2.o \
        GraphicsAdapter_SDL2.o \
        arduino/Common.o \
        arduino/String.o \
-       arduino/dtostrf.o \
-       WatchFaces/Tetris/Watchy_Tetris.o
+       arduino/dtostrf.o
 
 # Target executable
 TARGET = WatchySim
@@ -42,8 +41,6 @@ arduino/String.o: arduino/String.cpp arduino/String.h
 arduino/dtostrf.o: arduino/dtostrf.cpp arduino/dtostrf.h
 	$(CXX) $(CXXFLAGS) -c arduino/dtostrf.cpp -o arduino/dtostrf.o
 
-WatchFaces/Tetris/Watchy_Tetris.o: WatchFaces/Tetris/Watchy_Tetris.cpp WatchFaces/Tetris/Watchy_Tetris.h
-	$(CXX) $(CXXFLAGS) -c WatchFaces/Tetris/Watchy_Tetris.cpp -o WatchFaces/Tetris/Watchy_Tetris.o
 
 # Clean build files
 clean:

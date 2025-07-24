@@ -26,6 +26,7 @@ Watchy::Watchy() : WIFI_CONFIGURED(false), BLE_CONFIGURED(false), currentVoltage
 }
 
 void Watchy::drawWatchFace() {
+    display.fillScreen(GxEPD_BLACK);
     display.setFont(&DSEG7_Classic_Bold_53);
     display.setTextColor(GxEPD_WHITE);
     display.setCursor(5, 53 + 60);
