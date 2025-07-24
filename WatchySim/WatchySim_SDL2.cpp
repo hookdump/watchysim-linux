@@ -256,9 +256,11 @@ public:
         bool running = true;
         SDL_Event event;
         
-        // Initial paint
+        // Initial paint with a small delay to ensure window is visible
+        SDL_Delay(50);  // Give window time to appear
         onPaint();
         updateDisplay();
+        SDL_RenderPresent(renderer);  // Force immediate presentation
         
         
         while (running) {
