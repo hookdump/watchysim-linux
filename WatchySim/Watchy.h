@@ -2,19 +2,10 @@
 #define WATCHY_H
 
 #include <stdint.h>
+#include <windows.h>
+#include <objidl.h>
+#include <gdiplus.h>
 #include <string>
-
-#ifdef _WIN32
-    #include <windows.h>
-    #include <objidl.h>
-    #include <gdiplus.h>
-    using namespace Gdiplus;
-    #pragma comment (lib,"Gdiplus.lib")
-#else
-    // Linux/SDL2 includes
-    #include <SDL2/SDL.h>
-    #include "GraphicsAdapter.h"
-#endif
 
 #define PROGMEM
 
@@ -25,7 +16,9 @@
 #include "config.h"
 #include "DSEG7_Classic_Bold_53.h"
 
+using namespace Gdiplus;
 using namespace std;
+#pragma comment (lib,"Gdiplus.lib")
 
 #define GxEPD_WHITE 0xFFFF
 #define GxEPD_BLACK 0x0000
@@ -57,11 +50,7 @@ public:
     void fillScreen(uint16_t color);
     void drawBitmap(int16_t x, int16_t y, const uint8_t *bitmap, uint16_t w, uint16_t h, uint16_t color);
 
-#ifdef _WIN32
     void setContext(Graphics *graphics, HDC *hdc);
-#else
-    void setContext(GraphicsContext* ctx);
-#endif
 
     void setTextColor(uint16_t color);
     void setFont(const GFXfont *f = NULL);
@@ -140,12 +129,8 @@ private:
         int16_t *maxy);
 
 
-#ifdef _WIN32
     Graphics *graphics;
     HDC *hdc;
-#else
-    GraphicsContext* context;
-#endif
 
     int16_t currentX;
     int16_t currentY;
@@ -183,11 +168,7 @@ public:
     tmElements_t currentTime;
 public:
     Watchy();
-#ifdef _WIN32
     void showWatchFace(Graphics *graphics, HDC *hdc);
-#else
-    void showWatchFace(GraphicsContext* context);
-#endif
     void setTime(tm newTime);
     void resetTime();
 
@@ -217,9 +198,7 @@ protected:
     bool WIFI_CONFIGURED = true;
     
 private:
-#ifdef _WIN32
     Graphics *graphics;
-#endif
     float currentVoltage = 3.96f;
     weatherData currentWeather = { WATCHY_DEFAULT_TEMP, 550, true, "", true};
 };
