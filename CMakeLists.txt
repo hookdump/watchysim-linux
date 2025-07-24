@@ -16,6 +16,7 @@ option(BUILD_POKEMON "Build Pokemon watch face" OFF)
 option(BUILD_POWERSHELL "Build PowerShell watch face" OFF)
 option(BUILD_TETRIS "Build Tetris watch face" OFF)
 option(BUILD_BASIC "Build Basic watch face" OFF)
+option(BUILD_NACHI "Build Nachi watch face" OFF)
 
 # Find SDL2
 find_package(PkgConfig REQUIRED)
@@ -154,6 +155,12 @@ if(BUILD_BASIC)
     )
 endif()
 
+if(BUILD_NACHI)
+    add_watch_face(Nachi
+        WatchySim/WatchFaces/Nachi/Watchy_Nachi.cpp
+    )
+endif()
+
 # Default target that builds all enabled watch faces
 add_custom_target(all_watchfaces)
 if(BUILD_7SEG)
@@ -182,6 +189,9 @@ if(BUILD_TETRIS)
 endif()
 if(BUILD_BASIC)
     add_dependencies(all_watchfaces WatchySim_Basic)
+endif()
+if(BUILD_NACHI)
+    add_dependencies(all_watchfaces WatchySim_Nachi)
 endif()
 
 # Installation rules
@@ -230,6 +240,11 @@ if(BUILD_BASIC)
         RUNTIME DESTINATION bin
     )
 endif()
+if(BUILD_NACHI)
+    install(TARGETS WatchySim_Nachi
+        RUNTIME DESTINATION bin
+    )
+endif()
 
 # Print configuration summary
 message(STATUS "")
@@ -248,4 +263,5 @@ message(STATUS "  Pokemon: ${BUILD_POKEMON}")
 message(STATUS "  PowerShell: ${BUILD_POWERSHELL}")
 message(STATUS "  Tetris: ${BUILD_TETRIS}")
 message(STATUS "  Basic: ${BUILD_BASIC}")
+message(STATUS "  Nachi: ${BUILD_NACHI}")
 message(STATUS "")

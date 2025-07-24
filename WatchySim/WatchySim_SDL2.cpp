@@ -45,6 +45,8 @@
 #include "WatchFaces/Tetris/Watchy_Tetris.h"
 #elif defined(USE_BASIC)
 // Basic uses the base Watchy class
+#elif defined(USE_Nachi)
+#include "WatchFaces/Nachi/Watchy_Nachi.h"
 #else
 // Default to 7-segment if nothing is defined
 #include "WatchFaces/7_SEG/Watchy_7_SEG.h"
@@ -69,6 +71,8 @@ WatchyPowerShell watchy = WatchyPowerShell();
 WatchyTetris watchy = WatchyTetris();
 #elif defined(USE_BASIC)
 Watchy watchy = Watchy();
+#elif defined(USE_Nachi)
+WatchyNachi watchy = WatchyNachi();
 #else
 // Default to 7-segment if nothing is defined
 Watchy7SEG watchy = Watchy7SEG();
